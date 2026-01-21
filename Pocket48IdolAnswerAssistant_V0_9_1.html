@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>口袋48翻牌助手</title>
+    <link rel="icon" type="image/png" href="https://h5.48.cn/pocket48/image/logo.png">
+    <style>
+        /* 基本样式 */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 账号信息区域样式 */
+        .account-info-container {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .account-select {
+            margin-right: 10px;
+            padding: 5px;
+        }
+        
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .account-info-display {
+            margin: 10px 0;
+            width: 100%;
+        }
+        
+        .account-info-display span {
+            margin-right: 20px;
+        }
+        
+        /* 标签页样式 */
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+        }
+        
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        
+        .tab button.active {
+            background-color: #ccc;
+        }
+        
+        /* 数据视图切换标签样式 */
+        .data-view-tabs {
+            display: flex;
+            border-bottom: 1px solid #ccc;
+            margin: 15px 0 10px 0;
+        }
+        
+        .data-tab-btn {
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            cursor: pointer;
+            padding: 10px 20px;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+            outline: none;
+        }
+        
+        .data-tab-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .data-tab-btn.active {
+            background-color: #fff;
+            border-bottom: 1px solid white;
+            position: relative;
+            bottom: -1px;
+        }
+        
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        
+        /* 新增样式 */
+        .action-buttons {
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .action-buttons button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .data-section {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            font-family: monospace;
+            background-color: #f9f9f9;
+        }
+        
+        .log-time {
+            color: #666;
+            font-weight: bold;
+        }
+        
+        .results-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .results-section {
+            flex: 1 1 45%;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        /* 对话框模态窗口样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        /* 对话样式 */
+        .dialog-container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        
+        .dialog-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .dialog-idol {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .dialog-status {
+            color: #ff6b81;
+            margin-right: 10px;
+        }
+        
+        .dialog-cost {
+            color: #ff9f43;
+            background: #ffe0b2;
+            border-radius: 4px;
+            padding: 2px 8px;
+            margin-right: 6px;
+            display: inline-block;
+        }
+
+        .dialog-type {
+            color: #ff9f43;
+            background: #ffe0b2;
+            border-radius: 4px;
+            padding: 2px 8px;
+            margin-right: 6px;
+            display: inline-block;
+        }
+        
+        .dialog-qa {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .dialog-question, .dialog-answer {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .dialog-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .dialog-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .dialog-bubble {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        
+        .question-bubble {
+            background-color: #e3f2fd;
+            align-self: flex-start;
+        }
+        
+        .answer-bubble {
+            background-color: #f1f8e9;
+            align-self: flex-end;
+        }
+        
+        .dialog-username {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .dialog-time {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .dialog-content {
+            word-wrap: break-word;
+        }
+        
+        .idol-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .idol-stats p {
+            margin: 5px 0;
+            padding: 5px;
+            background-color: #f1f8e9;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        /* 分页控制样式 */
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        
+        .pagination-controls button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .pagination-controls button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .pagination-controls select {
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        .raw-data-list {
+            margin-top: 15px;
+        }
+        
+        /* 筛选控件样式 */
+        .filter-container {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .filter-container button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* 筛选结果区域样式 */
+        .filter-results {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .filter-results h4 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        /* 筛选状态样式 */
+        .filter-status {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        /* 文件上传容器样式 */
+        .file-upload-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px;
+        }
+        
+        .file-upload-container label {
+            margin-right: 5px;
+        }
+        
+        .file-upload-container input[type="file"] {
+            padding: 3px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .filter-status p {
+            margin: 0;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        
+        /* 扩展的翻牌项目样式 */
+        .expanded-item {
+            list-style-type: none;
+            margin-bottom: 15px;
+        }
+
+        /* 新增的数据视图切换样式 */
+        .data-view-tabs {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .data-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f1f1f1;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .data-tab-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .data-view {
+            display: none;
+        }
+        
+        .data-view.active {
+            display: block;
+        }
+        
+        /* 统计结果样式 */
+        .statistics-container {
+            margin-top: 10px;
+        }
+        
+        /* 统计图表样式 */
+        .chart-container {
+            margin-top: 15px;
+            width: 100%;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+        
+        .bar-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+        
+        .bar {
+            background-color: #4CAF50;
+            height: 25px;
+            min-width: 5px;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+        
+        .label {
+            margin-left: 10px;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        
+        .statistics-summary {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f1f8e9;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .statistics-filters {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .statistics-total {
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        
+        .statistics-tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .statistics-tab {
+            padding: 5px 15px;
+            cursor: pointer;
+            background-color: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            margin-right: 5px;
+        }
+        
+        .statistics-tab.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        /* 搜索高亮样式 */
+        .search-highlight {
+            background-color: #ffeb3b;
+            color: #000;
+            font-weight: bold;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+        
+        /* 移动设备响应式样式 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 5px; /* 减少整体内边距 */
+                font-size: 14px;
+            }
+            
+            /* 账号信息区域移动端优化 */
+            .account-info-container {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 8px; /* 减少内边距 */
+                margin-bottom: 15px; /* 减少下边距 */
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            .account-select {
+                margin-right: 0;
+                margin-bottom: 8px; /* 减少下边距 */
+                width: 100%;
+                padding: 8px; /* 减少内边距 */
+            }
+            
+            .delete-btn {
+                margin-bottom: 8px; /* 减少下边距 */
+                padding: 8px; /* 减少内边距 */
+                width: 100%;
+            }
+            
+            .account-info-display {
+                margin: 0;
+            }
+            
+            .account-info-display span {
+                display: block;
+                margin: 3px 0; /* 减少上下边距 */
+                font-size: 12px;
+            }
+            
+            /* 标签页移动端优化 */
+            .tab {
+                display: flex;
+                flex-wrap: wrap;
+                margin-bottom: 10px; /* 减少下边距 */
+            }
+            
+            .tab button {
+                flex: 1;
+                min-width: 120px;
+                padding: 10px 6px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 0; /* 移除圆角节省空间 */
+            }
+            
+            /* 标签内容区域优化 */
+            .tabcontent {
+                padding: 10px; /* 减少内边距 */
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 数据视图标签移动端优化 */
+            .data-view-tabs {
+                flex-direction: row;
+                gap: 3px; /* 减少间距 */
+                margin: 10px 0 8px 0; /* 减少边距 */
+            }
+            
+            .data-tab-btn {
+                margin-right: 0;
+                padding: 10px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 操作按钮移动端优化 */
+            .action-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 8px; /* 减少间距 */
+                margin: 10px 0; /* 减少上下边距 */
+            }
+            
+            .action-buttons button {
+                margin-right: 0;
+                padding: 10px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 文件上传容器移动端优化 */
+            .file-upload-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px; /* 减少间距 */
+                padding: 3px; /* 减少内边距 */
+            }
+            
+            .file-upload-container input[type="file"] {
+                padding: 6px; /* 减少内边距 */
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            .file-upload-container button {
+                padding: 10px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 筛选控件移动端优化 */
+            .filter-container {
+                flex-direction: column;
+                gap: 6px; /* 减少间距 */
+                padding: 8px; /* 减少内边距 */
+                margin: 8px 0; /* 减少上下边距 */
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            .filter-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 3px; /* 减少间距 */
+            }
+            
+            .filter-item label {
+                font-weight: bold;
+                font-size: 13px;
+                margin-bottom: 2px; /* 减少下边距 */
+            }
+            
+            .filter-item select,
+            .filter-item input[type="date"],
+            .filter-item input[type="text"] {
+                padding: 8px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 3px; /* 减小圆角 */
+                border: 1px solid #ccc; /* 细化边框 */
+            }
+            
+            .filter-container button {
+                padding: 10px; /* 减少内边距 */
+                font-size: 14px;
+                margin-top: 3px; /* 减少上边距 */
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 分页控件移动端优化 */
+            .pagination-controls {
+                flex-wrap: wrap;
+                gap: 6px; /* 减少间距 */
+                justify-content: center;
+                margin: 8px 0; /* 减少上下边距 */
+            }
+            
+            .pagination-controls button {
+                padding: 8px 12px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            .pagination-controls select {
+                padding: 6px; /* 减少内边距 */
+                font-size: 14px;
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 对话框移动端优化 */
+            .dialog-container {
+                margin-bottom: 10px; /* 减少下边距 */
+                padding: 8px; /* 减少内边距 */
+                border-radius: 4px; /* 减小圆角 */
+                border: 1px solid #ddd; /* 细化边框 */
+            }
+            
+            .dialog-header {
+                flex-wrap: wrap;
+                gap: 3px; /* 减少间距 */
+                font-size: 13px;
+                padding-bottom: 6px; /* 减少下内边距 */
+                margin-bottom: 6px; /* 减少下边距 */
+            }
+            
+            .dialog-cost,
+            .dialog-type,
+            .dialog-status {
+                font-size: 12px;
+                padding: 2px 4px; /* 减少内边距 */
+                border-radius: 2px; /* 减小圆角 */
+            }
+            
+            .dialog-qa {
+                gap: 8px; /* 减少间距 */
+            }
+            
+            .dialog-question,
+            .dialog-answer {
+                gap: 6px; /* 减少间距 */
+            }
+            
+            .dialog-avatar {
+                width: 32px; /* 减小头像尺寸 */
+                height: 32px;
+            }
+            
+            .dialog-bubble {
+                padding: 6px; /* 减少内边距 */
+                max-width: calc(100% - 45px);
+                font-size: 13px;
+                border-radius: 6px; /* 减小圆角 */
+            }
+            
+            .dialog-username {
+                font-size: 13px;
+                margin-bottom: 3px; /* 减少下边距 */
+            }
+            
+            .dialog-time {
+                font-size: 11px;
+                margin-bottom: 3px; /* 减少下边距 */
+            }
+            
+            /* 媒体元素移动端优化 */
+            audio, video {
+                width: 100% !important;
+                max-width: 100% !important;
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 结果容器移动端优化 */
+            .results-container {
+                flex-direction: column;
+                margin-top: 10px; /* 减少上边距 */
+            }
+            
+            .results-section {
+                flex: 1;
+                margin: 3px 0; /* 减少上下边距 */
+                padding: 8px; /* 减少内边距 */
+                border-radius: 3px; /* 减小圆角 */
+            }
+            
+            /* 日志容器移动端优化 */
+            .log-container {
+                height: 120px; /* 减少高度 */
+                font-size: 12px;
+                padding: 6px; /* 减少内边距 */
+                margin-top: 10px; /* 减少上边距 */
+                border-radius: 3px; /* 减小圆角 */
+                border: 1px solid #ddd; /* 细化边框 */
+            }
+            
+            /* 统计图表移动端优化 */
+            .chart-container {
+                max-height: 350px; /* 减少最大高度 */
+                margin-top: 10px; /* 减少上边距 */
+            }
+            
+            .bar-container {
+                flex-direction: column;
+                align-items: flex-start;
+                margin-bottom: 10px; /* 减少下边距 */
+                padding: 3px 0; /* 减少内边距 */
+            }
+            
+            .bar {
+                /* 移除强制宽度设置，保持数据比例 */
+                min-width: 5px; /* 设置最小宽度确保可见性 */
+                max-width: calc(100vw - 60px); /* 限制最大宽度避免溢出 */
+                margin-bottom: 3px; /* 减少下边距 */
+                height: 20px; /* 减少高度 */
+                border-radius: 2px; /* 减小圆角 */
+            }
+            
+            .label {
+                margin-left: 0;
+                font-size: 12px; /* 减小字体 */
+                word-wrap: break-word;
+                width: 100%;
+                padding: 2px 0;
+            }
+            
+            /* 更小屏幕设备（手机竖屏）优化 */
+            @media screen and (max-width: 480px) {
+                body {
+                    padding: 3px; /* 进一步减少内边距 */
+                    font-size: 13px;
+                }
+                
+                h1 {
+                    font-size: 20px;
+                    margin: 6px 0; /* 减少上下边距 */
+                }
+                
+                h2 {
+                    font-size: 17px;
+                    margin: 5px 0; /* 减少上下边距 */
+                }
+                
+                h3 {
+                    font-size: 15px;
+                    margin: 4px 0; /* 减少上下边距 */
+                }
+                
+                .tab button {
+                    padding: 8px 4px; /* 减少内边距 */
+                    font-size: 13px;
+                    min-width: 90px; /* 减小最小宽度 */
+                }
+                
+                .dialog-container {
+                    padding: 6px; /* 减少内边距 */
+                    margin-bottom: 8px; /* 减少下边距 */
+                }
+                
+                .dialog-avatar {
+                    width: 28px; /* 进一步减小头像尺寸 */
+                    height: 28px;
+                }
+                
+                .dialog-bubble {
+                    padding: 5px; /* 减少内边距 */
+                    font-size: 12px;
+                    max-width: calc(100% - 35px);
+                }
+                
+                .filter-container {
+                    padding: 6px 3px; /* 减少内边距 */
+                }
+                
+                .pagination-controls {
+                    font-size: 12px;
+                    margin: 6px 0; /* 减少上下边距 */
+                }
+                
+                .pagination-controls button {
+                    padding: 6px 10px; /* 减少内边距 */
+                    font-size: 13px;
+                }
+                
+                .log-container {
+                    height: 100px; /* 进一步减少高度 */
+                    font-size: 11px;
+                    padding: 4px; /* 减少内边距 */
+                }
+                
+                .chart-container {
+                    max-height: 250px; /* 减少最大高度 */
+                }
+                
+                .bar-container {
+                    margin-bottom: 8px; /* 减少下边距 */
+                }
+                
+                .bar {
+                    /* 保持数据比例，但限制最大宽度 */
+                    max-width: calc(100vw - 40px); /* 进一步限制最大宽度 */
+                    min-width: 3px; /* 减小最小宽度 */
+                    height: 18px; /* 进一步减少高度 */
+                }
+                
+                .label {
+                    font-size: 11px; /* 减小字体 */
+                    line-height: 1.2;
+                }
+                
+                /* 横屏模式优化 */
+                @media screen and (max-width: 768px) and (orientation: landscape) {
+                    .log-container {
+                        height: 80px; /* 减少高度 */
+                    }
+                    
+                    .chart-container {
+                        max-height: 200px; /* 减少最大高度 */
+                    }
+                    
+                    .dialog-container {
+                        margin-bottom: 6px; /* 减少下边距 */
+                    }
+                    
+                    body {
+                        padding: 3px; /* 减少内边距 */
+                    }
+                }
+                
+                /* 触摸设备优化 */
+                @media (pointer: coarse) {
+                    button, select, input[type="file"] {
+                        min-height: 44px;
+                        min-width: 44px;
+                    }
+                    
+                    .tab button {
+                        min-height: 44px; /* 减少最小高度但保持触摸友好 */
+                    }
+                    
+                    .data-tab-btn {
+                        min-height: 44px; /* 减少最小高度但保持触摸友好 */
+                    }
+                    
+                    .pagination-controls button {
+                        min-height: 40px;
+                        min-width: 40px;
+                    }
+                }
+            }
+        }
+    </style>
+    <script>
+        // 全局版本变量
+        const APP_VERSION = "0.9.1";
+        const UPDATE_DATE = "20250801";
+        
+        // 页面加载完成后设置版本信息
+        document.addEventListener("DOMContentLoaded", () => {
+            // 设置版本显示
+            const versionDisplay = document.getElementById("version-display");
+            if (versionDisplay) {
+                versionDisplay.textContent = APP_VERSION;
+            }
+            
+            // 设置更新日期显示
+            const updateDateDisplay = document.getElementById("update-date-display");
+            if (updateDateDisplay) {
+                updateDateDisplay.textContent = UPDATE_DATE;
+            }
+        });
+
+        const Requests_Headers_Default = {
+            "Host": "pocketapi.48.cn",
+            "Content-Type": "application/json;charset=utf-8",
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "pa": "MTY5MjY1MzQwODAwMCwyNDExLDIwNzc2MUQxM0E2NjE1MjFCNkE0NkM4QTY4NTVCNjM3LA==",
+            "User-Agent": "PocketFans201807/7.1.0 (iPad; iOS 16.6; Scale/2.00)",
+            "Accept-Language": "zh-Hans-CN;q=1, zh-Hant-TW;q=0.9",
+        };
+
+        const Requests_Appinfo_Default = {
+            "vendor": "Huawei",
+            "deviceId": "F2BA149C-06DB-9843-31DE-36BF375E36F2",
+            "appVersion": "7.1.0",
+            "appBuild": "23051902",
+            "osVersion": "16.6.0",
+            "osType": "ios",
+            "deviceName": "Huawei",
+            "os": "ios"
+        };
+        
+        // 全局变量存储翻牌数据
+        let idolAnswerRawData = null;
+        let currentToken = "";
+        let currentRawDataPage = 1;  // 当前原始数据页码
+        let rawDataPageSize = 50;    // 每页显示的原始数据条目数
+
+        // 全局变量存储当前搜索关键词
+        let currentSearchKeyword = '';
+
+        async function sendVerificationCode() {
+            const phoneNumber = document.getElementById("phoneNumber").value;
+            const url = "https://pocketapi.48.cn/user/api/v1/sms/send2";
+            const data = {
+                area: "86",
+                mobile: phoneNumber,
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        ...Requests_Headers_Default,
+                        AppInfo: JSON.stringify(Requests_Appinfo_Default),
+                    },
+                    body: JSON.stringify(data),
+                });
+                const result = await response.json();
+                if (result.status === 200 && result.success === true) {
+                    alert("验证码已发送，请查收短信！");
+                } else {
+                    alert(`发送验证码失败: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`网络错误: ${error.message}`);
+            }
+        }
+
+        function saveLoginReturns(response) {
+            if (response.status === 200) {
+                const { content } = response;
+
+                const accountInfo = {
+                    token: content.token,
+                    nickname: content.userInfo.nickname,
+                    id: content.userInfo.userId,
+                    loginTime: new Date().toLocaleString()
+                };
+                
+                // 获取现有账号信息
+                const accountInfos = getAccountInfosFromLocalStorage();
+                
+                // 删除具有相同ID的旧登录信息
+                const filteredAccountInfos = accountInfos.filter(info => info.id !== accountInfo.id);
+                
+                // 添加新的登录信息
+                filteredAccountInfos.push(accountInfo);
+                
+                // 保存更新后的账号列表
+                storeAccountInfosToLocalStorage(filteredAccountInfos);
+
+                updateAccountSelector();
+                const newOption = document.querySelector(`option[value="${accountInfo.id}"]`);
+                if (newOption) {
+                    newOption.selected = true;
+                }
+                updateSelectedAccount(accountInfo);
+                alert("已登录");
+                return true;
+            } else {
+                alert(`登录失败${response.status}: ${response.message}`);
+                return false;
+            }
+        }
+
+        async function login() {
+            const phoneNumber = document.getElementById("phoneNumber").value;
+            const verificationCode = document.getElementById("verificationCode").value;
+            const url = "https://pocketapi.48.cn/user/api/v1/login/app/mobile/code";
+            const data = {
+                code: verificationCode,
+                mobile: phoneNumber,
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        ...Requests_Headers_Default,
+                        AppInfo: JSON.stringify(Requests_Appinfo_Default),
+                    },
+                    body: JSON.stringify(data),
+                });
+                const result = await response.json();
+                if (result.status === 200 && result.success === true) {
+                    console.log("Token:", result.content.token);
+                    saveLoginReturns(result); // 调用函数保存登录信息
+                } else {
+                    alert(`登录失败: ${result.message}`);
+                }
+            } catch (error) {
+                alert(`网络错误: ${error.message}`);
+            }
+        }
+
+        function getAccountInfosFromLocalStorage() {
+            const data = localStorage.getItem("Web_0xwhy_Pocket48_IdolAnswerResult");
+            return data ? JSON.parse(data) : [];
+        }
+
+        function storeAccountInfosToLocalStorage(accountInfos) {
+            localStorage.setItem("Web_0xwhy_Pocket48_IdolAnswerResult", JSON.stringify(accountInfos));
+        }
+
+        // 添加载入原始数据功能
+        function loadRawData() {
+            const fileInput = document.getElementById('rawDataFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('请选择JSON文件');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                try {
+                    const jsonData = JSON.parse(event.target.result);
+                    
+                    // 验证文件格式是否符合原始数据结构
+                    if (jsonData.Content && Array.isArray(jsonData.Content)) {
+                        idolAnswerRawData = jsonData;
+                        updateLogMessage(`成功加载原始数据文件: ${file.name}, 包含 ${jsonData.Content.length} 条记录`);
+                        
+                        // 更新UI状态
+                        document.getElementById("downloadRawDataBtn").disabled = false;
+                        
+                        // 初始化筛选控件
+                        initializeFilterControls(idolAnswerRawData);
+                        
+                        // 显示原始数据摘要
+                        currentRawDataPage = 1; // 重置页码
+                        displayDataSummary(idolAnswerRawData);
+                    } else {
+                        throw new Error('文件格式不符合原始数据结构');
+                    }
+                } catch (error) {
+                    alert(`加载文件失败: ${error.message}`);
+                    updateLogMessage(`加载文件失败: ${error.message}`);
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('读取文件时发生错误');
+                updateLogMessage('读取文件时发生错误');
+            };
+            
+            reader.readAsText(file);
+        }
+
+        let accountSelect; // 提升声明到全局作用域
+        let selectedNickname; // 新增全局变量
+        let selectedId; // 新增全局变量  
+        let selectedLoginTime; // 新增全局变量
+
+        function updateAccountSelector() {
+            accountSelect.innerHTML = "";
+            const accountInfos = getAccountInfosFromLocalStorage();
+
+            accountInfos.forEach(accountInfo => {
+                const option = document.createElement("option");
+                option.value = accountInfo.id;
+                option.textContent = accountInfo.nickname;
+                accountSelect.appendChild(option);
+            });
+        }
+
+        // 更新选定账号的函数
+        function updateSelectedAccount(accountInfo) {
+            if (accountInfo) {
+                currentToken = accountInfo.token;
+                selectedNickname.querySelector("b").textContent = accountInfo.nickname;
+                selectedId.querySelector("b").textContent = accountInfo.id;
+                selectedLoginTime.querySelector("b").textContent = accountInfo.loginTime || "未知";
+            } else {
+                currentToken = "";
+                selectedNickname.querySelector("b").textContent = "";
+                selectedId.querySelector("b").textContent = "";
+                selectedLoginTime.querySelector("b").textContent = "";
+            }
+        }
+
+        // 标签页切换功能
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        // 切换数据视图
+        function switchDataView(viewId) {
+            // 隐藏所有数据视图
+            const dataViews = document.querySelectorAll('.data-view');
+            dataViews.forEach(view => view.style.display = 'none');
+            
+            // 移除所有标签按钮的active类
+            const tabBtns = document.querySelectorAll('.data-tab-btn');
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+            
+            // 显示选定的视图
+            document.getElementById(viewId + '-view').style.display = 'block';
+            
+            // 激活相应的标签按钮
+            event.currentTarget.classList.add('active');
+        }
+        
+        // 生成统计图表
+        function generateStatistics() {
+            const statisticsContainer = document.querySelector('.statistics-container');
+            
+            // 检查是否有数据
+            const dataToUse = filteredRawData || idolAnswerRawData;
+            if (!dataToUse || !dataToUse.Content || dataToUse.Content.length === 0) {
+                statisticsContainer.innerHTML = "<p>无可用数据，请先获取或加载翻牌数据</p>";
+                return;
+            }
+            
+            // 获取当前的筛选条件
+            const selectedIdol = document.getElementById('rawIdolSelector')?.value || 'all';
+            const startDateInput = document.getElementById('rawStartDate')?.value || '';
+            const endDateInput = document.getElementById('rawEndDate')?.value || '';
+            const selectedStatus = document.getElementById('rawStatusSelector')?.value || 'all';
+            const selectedType = document.getElementById('rawTypeSelector')?.value || 'all';
+            
+            // 构建筛选条件说明
+            let filterDesc = [];
+            if (selectedIdol !== 'all') filterDesc.push(`成员: ${selectedIdol}`);
+            if (startDateInput) filterDesc.push(`开始日期: ${startDateInput}`);
+            if (endDateInput) filterDesc.push(`结束日期: ${endDateInput}`);
+            if (selectedStatus !== 'all') filterDesc.push(`状态: ${getIdolAnswerStatus(parseInt(selectedStatus))}`);
+            if (selectedType !== 'all') filterDesc.push(`类型: ${getIdolAnswerType(parseInt(selectedType))}`);
+            
+            // 创建统计数据
+            const sourceData = {};
+            const allAnswersCount = { total: 0, totalCost: 0 }; // 所有翻牌的统计
+            
+            dataToUse.Content.forEach(card => {
+                const idol = card.baseUserInfo.nickname;
+                const cost = card.cost || 0;
+                allAnswersCount.total += 1;
+                allAnswersCount.totalCost += cost;
+                
+                if (!sourceData[idol]) {
+                    sourceData[idol] = { count: 0, totalCost: 0 };
+                }
+                sourceData[idol].count += 1;
+                sourceData[idol].totalCost += cost;
+            });
+            
+            // 按照数量排序
+            const sortedSourceData = Object.entries(sourceData)
+                .sort((a, b) => b[1].count - a[1].count);
+            
+            // 创建统计视图HTML
+            let statsHtml = `
+                <div class="statistics-summary">
+                    <p class="statistics-filters">当前筛选条件: ${filterDesc.length > 0 ? filterDesc.join(', ') : '无'}</p>
+                    <p class="statistics-total">总计: ${allAnswersCount.total} 条翻牌 / ${allAnswersCount.totalCost} 鸡腿</p>
+                </div>
+                <div class="statistics-tabs">
+                    <div class="statistics-tab active" onclick="switchStatisticsView('count')">按翻牌数量</div>
+                    <div class="statistics-tab" onclick="switchStatisticsView('cost')">按鸡腿消费</div>
+                </div>
+                <div id="count-chart" class="chart-container">
+            `;
+            
+            // 添加按翻牌数量的图表
+            if (sortedSourceData.length > 0) {
+                const maxCount = Math.max(...sortedSourceData.map(([_, data]) => data.count));
+                const scaleRatio = Math.min(500 / maxCount, 15); // 最大宽度500px或每条15px
+                
+                sortedSourceData.forEach(([source, data]) => {
+                    statsHtml += `
+                        <div class="bar-container">
+                            <div class="bar" style="width: ${data.count * scaleRatio}px;"></div>
+                            <span class="label">${source} (${data.count} 条/ ${data.totalCost} 鸡腿)</span>
+                        </div>
+                    `;
+                });
+            } else {
+                statsHtml += "<p>无翻牌记录</p>";
+            }
+            statsHtml += `
+                </div>
+                <div id="cost-chart" class="chart-container" style="display:none;">
+            `;
+            
+            // 添加按鸡腿消费的图表
+            if (sortedSourceData.length > 0) {
+                // 按消费鸡腿数重新排序
+                const sortedByCost = [...sortedSourceData].sort((a, b) => b[1].totalCost - a[1].totalCost);
+                const maxCost = Math.max(...sortedByCost.map(([_, data]) => data.totalCost));
+                const costScaleRatio = Math.min(500 / maxCost, 0.5); // 最大宽度500px或每鸡腿0.5px
+                
+                sortedByCost.forEach(([source, data]) => {
+                    statsHtml += `
+                        <div class="bar-container">
+                            <div class="bar" style="width: ${data.totalCost * costScaleRatio}px;"></div>
+                            <span class="label">${source} (${data.totalCost} 鸡腿/ ${data.count} 条)</span>
+                        </div>
+                    `;
+                });
+            } else {
+                statsHtml += "<p>无翻牌记录</p>";
+            }
+            statsHtml += `
+                </div>
+            `;
+            
+            statisticsContainer.innerHTML = statsHtml;
+        }
+        
+        // 切换统计视图（数量/消费）
+        function switchStatisticsView(viewType) {
+            // 隐藏所有图表
+            document.querySelectorAll('.chart-container').forEach(chart => {
+                chart.style.display = 'none';
+            });
+            
+            // 移除所有标签的active类
+            document.querySelectorAll('.statistics-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选定的图表
+            document.getElementById(`${viewType}-chart`).style.display = 'block';
+            
+            // 激活相应的标签
+            document.querySelector(`.statistics-tab[onclick*="${viewType}"]`).classList.add('active');
+        }
+        
+        // 分页控制函数
+        function changePage(dataType, direction) {
+            if (dataType === 'raw') {
+                const dataToUse = filteredRawData || idolAnswerRawData;
+                if (!dataToUse || !dataToUse.Content) return;
+                
+                const totalPages = Math.ceil(dataToUse.Content.length / rawDataPageSize);
+                
+                if (direction === 'prev' && currentRawDataPage > 1) {
+                    currentRawDataPage--;
+                    displayDataSummary(dataToUse);
+                } else if (direction === 'next' && currentRawDataPage < totalPages) {
+                    currentRawDataPage++;
+                    displayDataSummary(dataToUse);
+                }
+            }
+        }
+        
+        // 修改每页显示条数
+        function changePageSize(newSize) {
+            rawDataPageSize = parseInt(newSize);
+            currentRawDataPage = 1; // 重置到第一页
+            
+            const dataToUse = filteredRawData || idolAnswerRawData;
+            if (dataToUse) {
+                displayDataSummary(dataToUse);
+            }
+        }
+        // 封装POST请求方法，模拟Pocket48_Request.py
+        async function POST_Request(url, data, useToken = true) {
+            const headers = {
+                ...Requests_Headers_Default,
+                AppInfo: JSON.stringify(Requests_Appinfo_Default)
+            };
+            
+            if (useToken && currentToken) {
+                headers.token = currentToken;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                return {
+                    HasError: 0,
+                    Data: await response.text()
+                };
+            } catch (error) {
+                return {
+                    HasError: 1,
+                    ErrorMessage: `请求异常: ${error.message}`
+                };
+            }
+        }
+        // 实现获取翻牌数据的功能，模拟GetAllIdolAnswer方法
+        async function getIdolAnswer() {
+            if (!currentToken) {
+                updateLogMessage("错误: 未选择账号，请先登录或选择已有账号");
+                return;
+            }
+            
+            updateLogMessage("开始获取翻牌数据...");
+            document.getElementById("getIdolAnswerBtn").disabled = true;
+            
+            // 初始化变量
+            let beginLimit = 1;
+            let responseSize = 20;
+            let getCount = 0;
+            let getCountState = 0;
+            let getCount_Upper = 0;
+            let getCount_Lower = 0;
+            let requestCount = 0;
+            const maxRequests = 100;
+            
+            // 存储结果
+            const ReturnData = {
+                IdolAnswer: {
+                    Content: []
+                }
+            };
+            
+            // 使用二分法确定总数据量
+            updateLogMessage("第一阶段：查找翻牌数量范围...");
+            while (getCountState !== 2 && requestCount < maxRequests) {
+                requestCount++;
+                
+                const data = {
+                    status: 0,
+                    beginLimit: beginLimit,
+                    memberId: "",
+                    limit: 1
+                };
+                
+                const response = await POST_Request(
+                    "https://pocketapi.48.cn/idolanswer/api/idolanswer/v1/user/question/list",
+                    data
+                );
+                
+                if (response.HasError === 0) {
+                    try {
+                        const response_data = JSON.parse(response.Data);
+                        
+                        if (response_data.status === 200) {
+                            const userData = response_data.content || [];
+                            responseSize = userData.length;
+                            
+                            if (getCountState === 0) {
+                                updateLogMessage(`阶段1-查找翻牌数量最大范围中，进度${beginLimit}`);
+                                
+                                if (responseSize === 0) {
+                                    if (beginLimit === 1) {
+                                        getCount = 0;
+                                        getCountState = 2;
+                                    } else {
+                                        getCountState = 1;
+                                        getCount_Upper = beginLimit;
+                                        getCount_Lower = Math.floor(beginLimit / 2);
+                                        beginLimit = Math.floor((getCount_Lower + getCount_Upper) / 2);
+                                    }
+                                } else {
+                                    beginLimit *= 2;
+                                }
+                            } else if (getCountState === 1) {
+                                if (responseSize === 0) {
+                                    getCount_Upper = beginLimit - 1;
+                                } else {
+                                    getCount_Lower = beginLimit;
+                                }
+                                
+                                beginLimit = Math.floor((getCount_Lower + getCount_Upper) / 2);
+                                updateLogMessage(`阶段2-查找翻牌数量精确范围中，[${getCount_Lower},${getCount_Upper}]`);
+                                
+                                if (getCount_Upper - getCount_Lower <= 1) {
+                                    const upper_data = {
+                                        status: 0,
+                                        beginLimit: getCount_Upper,
+                                        memberId: "",
+                                        limit: 1
+                                    };
+                                    
+                                    const upper_response = await POST_Request(
+                                        "https://pocketapi.48.cn/idolanswer/api/idolanswer/v1/user/question/list",
+                                        upper_data
+                                    );
+                                    
+                                    if (upper_response.HasError === 0) {
+                                        try {
+                                            const upper_response_data = JSON.parse(upper_response.Data);
+                                            
+                                            if (upper_response_data.status === 200 && 
+                                                upper_response_data.content && 
+                                                upper_response_data.content.length > 0) {
+                                                getCount = getCount_Upper;
+                                            } else {
+                                                getCount = getCount_Lower;
+                                            }
+                                            getCountState = 2;
+                                        } catch (e) {
+                                            break;
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            updateLogMessage(`错误: ${response_data.message}`);
+                            break;
+                        }
+                    } catch (e) {
+                        updateLogMessage(`错误: ${e.message}`);
+                        break;
+                    }
+                } else {
+                    updateLogMessage(`错误: ${response.ErrorMessage}`);
+                    break;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            // 获取详细内容
+            updateLogMessage("第二阶段：获取翻牌详细内容...");
+            beginLimit = 0;
+            responseSize = 20;
+            
+            while (responseSize > 0) {
+                const data = {
+                    status: 0,
+                    beginLimit: beginLimit,
+                    memberId: "",
+                    limit: 20
+                };
+                
+                const response = await POST_Request(
+                    "https://pocketapi.48.cn/idolanswer/api/idolanswer/v1/user/question/list",
+                    data
+                );
+                
+                if (response.HasError === 0) {
+                    try {
+                        const response_data = JSON.parse(response.Data);
+                        
+                        if (response_data.status === 200) {
+                            const userData = response_data.content || [];
+                            ReturnData.IdolAnswer.Content.push(...userData);
+                            responseSize = userData.length;
+                            beginLimit += 20;
+                            updateLogMessage(`阶段3-获取翻牌详细内容，${beginLimit}/${getCount}`);
+                        } else {
+                            break;
+                        }
+                    } catch (e) {
+                        break;
+                    }
+                } else {
+                    updateLogMessage(`错误: ${response.ErrorMessage}`);
+                    break;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            updateLogMessage(`完成！共获取 ${ReturnData.IdolAnswer.Content.length} 条翻牌数据`);
+            idolAnswerRawData = ReturnData.IdolAnswer;
+            document.getElementById("getIdolAnswerBtn").disabled = false;
+            document.getElementById("downloadRawDataBtn").disabled = false;
+            
+            // 初始化筛选控件
+            initializeFilterControls(idolAnswerRawData);
+            
+            // 显示原始数据摘要
+            displayDataSummary(idolAnswerRawData);
+            
+            return ReturnData;
+        }
+        
+        // 新增：初始化筛选控件函数
+        function initializeFilterControls(data) {
+            if (!data || !data.Content) {
+                return;
+            }
+            
+            // 保存原始数据
+            originalRawData = data;
+            
+            // 获取所有成员名称及翻牌数量
+            const idolCounts = data.Content.reduce((acc, record) => {
+                const name = record.baseUserInfo.nickname;
+                acc[name] = (acc[name] || 0) + 1;
+                return acc;
+            }, {});
+            
+            // 按翻牌数量排序
+            const sortedIdols = Object.entries(idolCounts).sort((a, b) => b[1] - a[1]);
+            
+            // 更新成员选择器
+            const rawIdolSelector = document.getElementById('rawIdolSelector');
+            if (rawIdolSelector) {
+                rawIdolSelector.innerHTML = '<option value="all">全部成员</option>';
+                sortedIdols.forEach(([idol, count]) => {
+                    const option = document.createElement('option');
+                    option.value = idol;
+                    option.textContent = `${idol} (${count})`;
+                    rawIdolSelector.appendChild(option);
+                });
+            }
+            
+            // 显示筛选控件
+            const filterContainer = document.querySelector('.filter-container');
+            if (filterContainer) {
+                filterContainer.style.display = 'flex';
+            }
+        }
+        
+        // 显示数据摘要
+        function displayDataSummary(data) {
+            
+            // 筛选控件
+            const filterContainer = document.querySelector('.filter-container');
+            const rawIdolSelector = document.getElementById('rawIdolSelector');
+            const filterStatus = document.getElementById('rawFilterStatus');
+            
+            // 分页控件
+            const pageInfoTop = document.getElementById('page-info-top');
+            const pageInfoBottom = document.getElementById('page-info-bottom');
+            const prevBtnTop = document.getElementById('prev-page-top');
+            const nextBtnTop = document.getElementById('next-page-top');
+            const prevBtnBottom = document.getElementById('prev-page-bottom');
+            const nextBtnBottom = document.getElementById('next-page-bottom');
+            const pageSizeSelector = document.getElementById('page-size-selector');
+            
+            // 数据列表容器
+            const rawDataList = document.getElementById('raw-data-list');
+            
+            // 获取附加信息显示开关状态
+            const showAdditionalInfoCheckbox = document.getElementById('showAdditionalInfo');
+            const showAdditionalInfo = showAdditionalInfoCheckbox ? showAdditionalInfoCheckbox.checked : true;
+            
+            // 获取当前搜索关键词
+            const contentSearchInput = document.getElementById('questionSearchInput');
+            const searchKeyword = contentSearchInput ? contentSearchInput.value.trim() : '';
+            
+            if (!data || !data.Content) {
+                rawDataList.innerHTML = "";
+                prevBtnTop.disabled = true;
+                nextBtnTop.disabled = true;
+                prevBtnBottom.disabled = true;
+                nextBtnBottom.disabled = true;
+                
+                // 同时更新统计视图
+                generateStatistics();
+                return;
+            }
+
+            // 更新分页控件
+            const totalPages = Math.ceil(data.Content.length / rawDataPageSize);
+            const pageInfo = `第 ${currentRawDataPage} 页 / 共 ${totalPages} 页`;
+            pageInfoTop.textContent = pageInfo;
+            pageInfoBottom.textContent = pageInfo;
+            
+            prevBtnTop.disabled = currentRawDataPage <= 1;
+            nextBtnTop.disabled = currentRawDataPage >= totalPages;
+            prevBtnBottom.disabled = currentRawDataPage <= 1;
+            nextBtnBottom.disabled = currentRawDataPage >= totalPages;
+            
+            // 计算当前页的起始和结束索引
+            const startIndex = (currentRawDataPage - 1) * rawDataPageSize;
+            const endIndex = Math.min(startIndex + rawDataPageSize, data.Content.length);
+            
+            // 显示当前页的记录
+            rawDataList.innerHTML = '';
+            if (data.Content.length > 0) {
+                for (let i = startIndex; i < endIndex; i++) {
+                    const record = data.Content[i];
+                    const dialogContainer = document.createElement('div');
+                    dialogContainer.className = 'dialog-container';
+                    
+                    let html = `<div class="dialog-header">
+                        <span class="dialog-idol">${record.baseUserInfo.nickname}</span>
+                        <span class="dialog-cost">${record.cost}鸡腿</span>
+                        <span class="dialog-type">${getIdolAnswerType(record.answerType)}</span>
+                        <span style="float:right; color: ${
+                            record.status === 2 ? 'green' : 
+                            record.status === 3 ? 'red' : 
+                            record.status === 1 ? '#FFD700' : 'blue'
+                        };" class="dialog-status">${getIdolAnswerStatus(record.status)}</span>
+                    </div>
+                    
+                    <div class="dialog-qa">
+                        <div class="dialog-question">
+                            <div class="dialog-avatar">
+                                <img src="https://source.48.cn${record.headImgUrl || '/placeholder.jpg'}" onerror="this.src='https://source.48.cn/resource/images/smdefaulthead.png'" alt="用户头像">
+                            </div>
+                            <div class="dialog-bubble question-bubble">
+                                <div class="dialog-username">${record.userName}</div>
+                                <div class="dialog-time">${formatTimestamp(record.qtime)}</div>
+                                <div class="dialog-content">${formatContent(record.content, searchKeyword)}</div>
+                                ${showAdditionalInfo ? `<div style="color:#888;font-size:12px;background:#f5f5f5;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;">
+                                    字数: ${record.content ? record.content.length : 0}
+                                </div>` : ''}
+                            </div>
+                        </div>`;
+                    
+                    if (record.status === 2) { // 已翻牌
+                        html += `<div class="dialog-answer">
+                            <div class="dialog-avatar">
+                                <img src="https://source.48.cn${record.baseUserInfo.avatar || '/placeholder.jpg'}" onerror="this.src='https://source.48.cn/resource/images/smdefaulthead.png'" alt="偶像头像">
+                            </div>
+                            <div class="dialog-bubble answer-bubble">
+                                <div class="dialog-username">${record.baseUserInfo.nickname}</div>
+                                <div class="dialog-time">${formatTimestamp(record.answerTime)}</div>
+                                ${
+                                    record.answerType === 1
+                                    ? `<div class="dialog-content">${formatContent(record.answerContent, searchKeyword)}</div>
+                                       ${showAdditionalInfo ? `<div style="color:#888;font-size:12px;background:#f5f5f5;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;">
+                                           字数: ${record.answerContent ? record.answerContent.length : 0} | 翻牌时长: ${calculateAnswerDuration(record.qtime, record.answerTime)}
+                                       </div>` : ''}`
+                                    : (() => {
+                                        try {
+                                            const media = JSON.parse(record.answerContent);
+                                            const url = `https://mp4.48.cn${media.url}`;
+                                            const duration = media.duration;
+                                            if (record.answerType === 2) {
+                                                // 语音翻牌
+                                                return `
+                                                    <audio controls src="${url}"></audio>
+                                                    ${showAdditionalInfo ? `<div style="color:#888;font-size:12px;background:#f5f5f5;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;">
+                                                        语音时长: ${duration} 秒 | 翻牌时长: ${calculateAnswerDuration(record.qtime, record.answerTime)}
+                                                    </div>` : ''}
+                                                `;
+                                            } else if (record.answerType === 3) {
+                                                // 视频翻牌
+                                                return `
+                                                    <video controls src="${url}" style="max-width:100%;"></video>
+                                                    ${showAdditionalInfo ? `<div style="color:#888;font-size:12px;background:#f5f5f5;padding:2px 8px;border-radius:4px;display:inline-block;margin-top:4px;">
+                                                        视频时长: ${duration} 秒 | 翻牌时长: ${calculateAnswerDuration(record.qtime, record.answerTime)}
+                                                    </div>` : ''}
+                                                `;
+                                            }
+                                        } catch (e) {
+                                            return `<div class="dialog-content">[多媒体内容解析失败]</div>`;
+                                        }
+                                    })()
+                                }
+                            </div>
+                        </div>`;
+                    }
+                    
+                    dialogContainer.innerHTML = html;
+                    rawDataList.appendChild(dialogContainer);
+                }
+            }
+            
+            // 更新筛选状态
+            if (1) {
+                // 显示筛选状态
+                const selectedIdol = rawIdolSelector.value;
+                const startDateInput = document.getElementById('rawStartDate');
+                const endDateInput = document.getElementById('rawEndDate');
+                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput.value ? new Date(endDateInput.value + 'T23:59:59') : null;
+                
+                let statusText = '';
+                if (selectedIdol && selectedIdol !== 'all') {
+                    statusText += `成员: ${selectedIdol} `;
+                }
+                if (startDate) {
+                    statusText += `开始日期: ${startDate.toLocaleDateString()} `;
+                }
+                if (endDate) {
+                    statusText += `结束日期: ${endDate.toLocaleDateString()} `;
+                }
+                
+                if (statusText) {
+                    filterStatus.innerHTML = `<p>当前筛选条件: ${statusText} (共 ${data.Content.length} 条记录)</p>`;
+                    filterStatus.style.display = 'block';
+                } else {
+                    filterStatus.innerHTML = `<p>显示所有翻牌记录 (共 ${data.Content.length} 条)</p>`;
+                    filterStatus.style.display = 'block';
+                }
+            }
+            
+            // 在数据更新后同时更新统计视图
+            generateStatistics();
+        }
+
+        // 高亮显示搜索关键词的函数
+        function highlightSearchKeyword(text, keyword) {
+            if (!text || !keyword) return text;
+            
+            // 转义特殊字符以用于正则表达式
+            const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escapedKeyword})`, 'gi');
+            
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+        
+        // 格式化内容，处理换行符
+        function formatContent(content, searchKeyword = '') {
+            if (!content) return '';
+            
+            // 先处理换行符
+            let formattedContent = content.replace(/\n/g, '<br>');
+            
+            // 如果有搜索关键词，进行高亮显示
+            if (searchKeyword) {
+                formattedContent = highlightSearchKeyword(formattedContent, searchKeyword);
+            }
+            
+            return formattedContent;
+        }
+        
+        // 格式化时间戳
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return '未知时间';
+            const date = new Date(parseInt(timestamp));
+            return date.toLocaleString();
+        }
+        
+        // 获取状态文本 - 移动到此处以修复引用错误
+        function getIdolAnswerStatus(status) {
+            switch(status) {
+                case 1: return '未翻牌';
+                case 2: return '已翻牌';
+                case 3: return '已退款';
+                case 4: return '翻牌中';
+                default: return '未知状态';
+            }
+        }
+
+        // 获取翻牌类型文本
+        function getIdolAnswerType(type) {
+            switch(type) {
+                case 1: return '文字翻牌';
+                case 2: return '语音翻牌';
+                case 3: return '视频翻牌';
+                default: return '未知类型';
+            }
+        }
+        
+        // 清除原始数据筛选条件
+        function clearRawFilters() {
+            if (document.getElementById('rawIdolSelector')) {
+                document.getElementById('rawIdolSelector').value = 'all';
+            }
+            if (document.getElementById('rawStartDate')) {
+                document.getElementById('rawStartDate').value = '';
+            }
+            if (document.getElementById('rawEndDate')) {
+                document.getElementById('rawEndDate').value = '';
+            }
+            if (document.getElementById('rawStatusSelector')) {
+                document.getElementById('rawStatusSelector').value = 'all';
+            }
+            if (document.getElementById('rawTypeSelector')) {
+                document.getElementById('rawTypeSelector').value = 'all';
+            }
+            // 清除内容搜索输入框
+            if (document.getElementById('questionSearchInput')) {
+                document.getElementById('questionSearchInput').value = '';
+            }
+            // 重置附加信息显示开关为选中状态
+            if (document.getElementById('showAdditionalInfo')) {
+                document.getElementById('showAdditionalInfo').checked = true;
+            }
+            
+            // 清除全局搜索关键词
+            currentSearchKeyword = '';
+            
+            // 恢复原始数据显示
+            filteredRawData = null;
+            currentRawDataPage = 1;
+            displayDataSummary(originalRawData);
+        }
+        
+        // 下载JSON文件
+        function downloadJSON(data, filename) {
+            if (!data) {
+                updateLogMessage("错误: 没有数据可供下载");
+                return;
+            }
+            
+            const json = JSON.stringify(data, null, 4);
+            const blob = new Blob([json], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            updateLogMessage(`已下载文件: ${filename}`);
+        }
+        
+        // 更新日志消息
+        function updateLogMessage(message) {
+            const logElem = document.getElementById("logMessages");
+            if (!logElem) return;
+            
+            const now = new Date().toLocaleTimeString();
+            const logEntry = document.createElement("div");
+            logEntry.innerHTML = `<span class="log-time">[${now}]</span> ${message}`;
+            
+            logElem.appendChild(logEntry);
+            logElem.scrollTop = logElem.scrollHeight;
+        }
+        
+        // 添加全局变量保存原始未筛选数据
+        let originalRawData = null;
+        let filteredRawData = null;
+        
+        // 修改自动应用原始数据筛选函数
+        function autoApplyRawFilter() {
+            if (!idolAnswerRawData || !idolAnswerRawData.Content) {
+                updateLogMessage("错误: 没有原始数据可筛选");
+                return;
+            }
+            
+            // 首次筛选时保存原始数据
+            if (!originalRawData) {
+                originalRawData = idolAnswerRawData;
+            }
+            
+            const idolSelector = document.getElementById('rawIdolSelector');
+            const selectedIdol = idolSelector ? idolSelector.value : 'all';
+            
+            const startDateInput = document.getElementById('rawStartDate');
+            const endDateInput = document.getElementById('rawEndDate');
+            const startDate = startDateInput && startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput && endDateInput.value ? new Date(endDateInput.value + 'T23:59:59') : null;
+            
+            // 获取状态和类型筛选条件
+            const statusSelector = document.getElementById('rawStatusSelector');
+            const selectedStatus = statusSelector ? statusSelector.value : 'all';
+            
+            const typeSelector = document.getElementById('rawTypeSelector');
+            const selectedType = typeSelector ? typeSelector.value : 'all';
+            
+            // 获取内容搜索条件
+            const contentSearchInput = document.getElementById('questionSearchInput');
+            const contentSearchText = contentSearchInput ? contentSearchInput.value.trim().toLowerCase() : '';
+            
+            // 更新全局搜索关键词变量
+            currentSearchKeyword = contentSearchInput ? contentSearchInput.value.trim() : '';
+            
+            // 复制原始数据
+            let filteredData = [...originalRawData.Content];
+            
+            // 按成员筛选
+            if (selectedIdol && selectedIdol !== 'all') {
+                filteredData = filteredData.filter(record => 
+                    record.baseUserInfo && record.baseUserInfo.nickname === selectedIdol
+                );
+            }
+            
+            // 按日期筛选
+            if (startDate || endDate) {
+                filteredData = filteredData.filter(record => {
+                    const questionTime = new Date(parseInt(record.qtime));
+                    
+                    if (startDate && endDate) {
+                        return questionTime >= startDate && questionTime <= endDate;
+                    } else if (startDate) {
+                        return questionTime >= startDate;
+                    } else {
+                        return questionTime <= endDate;
+                    }
+                });
+            }
+            
+            // 按状态筛选
+            if (selectedStatus && selectedStatus !== 'all') {
+                const statusValue = parseInt(selectedStatus);
+                filteredData = filteredData.filter(record => record.status === statusValue);
+            }
+            
+            // 按类型筛选
+            if (selectedType && selectedType !== 'all') {
+                const typeValue = parseInt(selectedType);
+                filteredData = filteredData.filter(record => record.answerType === typeValue);
+            }
+            
+            // 按内容搜索（同时搜索提问和回答内容）
+            if (contentSearchText) {
+                filteredData = filteredData.filter(record => {
+                    // 搜索提问内容
+                    const questionMatch = record.content && 
+                                         record.content.toLowerCase().includes(contentSearchText);
+                    
+                    // 搜索回答内容（仅对已翻牌的文字翻牌进行搜索）
+                    const answerMatch = record.status === 2 && 
+                                       record.answerType === 1 && 
+                                       record.answerContent && 
+                                       record.answerContent.toLowerCase().includes(contentSearchText);
+                    
+                    return questionMatch || answerMatch;
+                });
+            }
+            
+            // 更新当前数据和页面显示
+            currentRawDataPage = 1; // 重置到第一页
+            // 创建一个新的对象来保存筛选后的数据
+            filteredRawData = {
+                Content: filteredData
+            };
+            
+            // 显示筛选后的结果
+            displayDataSummary(filteredRawData);
+            
+            // 更新筛选状态提示
+            const rawDataSummary = document.getElementById('rawDataSummary');
+            let filterStatus = document.getElementById('rawFilterStatus');
+            if (!filterStatus) {
+                filterStatus = document.createElement('div');
+                filterStatus.id = 'rawFilterStatus';
+                filterStatus.className = 'filter-status';
+                rawDataSummary.insertBefore(filterStatus, rawDataSummary.querySelector('.pagination-controls'));
+            }
+            
+            // 创建筛选状态文本
+            let statusText = '';
+            if (selectedIdol && selectedIdol !== 'all') {
+                statusText += `成员: ${selectedIdol} `;
+            }
+            if (startDate) {
+                statusText += `开始日期: ${startDate.toLocaleDateString()} `;
+            }
+            if (endDate) {
+                statusText += `结束日期: ${endDate.toLocaleDateString()} `;
+            }
+            if (selectedStatus && selectedStatus !== 'all') {
+                statusText += `状态: ${getIdolAnswerStatus(parseInt(selectedStatus))} `;
+            }
+            if (selectedType && selectedType !== 'all') {
+                statusText += `类型: ${getIdolAnswerType(parseInt(selectedType))} `;
+            }
+            if (contentSearchText) {
+                statusText += `内容搜索: "${contentSearchText}" `;
+            }
+            
+            if (statusText) {
+                filterStatus.innerHTML = `<p>当前筛选条件: ${statusText} (共 ${filteredData.length} 条记录)</p>`;
+            } else {
+                filterStatus.innerHTML = `<p>显示所有翻牌记录 (共 ${filteredData.length} 条)</p>`;
+            }
+        }
+        
+        // 计算翻牌时长的函数
+        function calculateAnswerDuration(qtime, answerTime) {
+            if (!qtime || !answerTime) return '未知';
+            
+            const questionTime = new Date(parseInt(qtime));
+            const responseTime = new Date(parseInt(answerTime));
+            const diffMs = responseTime.getTime() - questionTime.getTime();
+            
+            if (diffMs < 0) return '时间异常';
+            
+            const diffSeconds = Math.floor(diffMs / 1000);
+            const diffMinutes = Math.floor(diffSeconds / 60);
+            const diffHours = Math.floor(diffMinutes / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffDays > 0) {
+                const remainingHours = diffHours % 24;
+                const remainingMinutes = diffMinutes % 60;
+                return `${diffDays}天${remainingHours}小时${remainingMinutes}分钟`;
+            } else if (diffHours > 0) {
+                const remainingMinutes = diffMinutes % 60;
+                return `${diffHours}小时${remainingMinutes}分钟`;
+            } else if (diffMinutes > 0) {
+                const remainingSeconds = diffSeconds % 60;
+                return `${diffMinutes}分钟${remainingSeconds}秒`;
+            } else {
+                return `${diffSeconds}秒`;
+            }
+        }
+        
+        // 在页面加载完成后初始化
+        document.addEventListener("DOMContentLoaded", () => {
+            // 创建账号信息区域
+            accountInfoContainer = document.createElement("div");
+            accountInfoContainer.className = "account-info-container";
+            
+            // 创建账号选择器
+            accountSelect = document.createElement("select");
+            accountSelect.className = "account-select";
+            
+            // 创建删除按钮
+            const deleteAccountButton = document.createElement("button");
+            deleteAccountButton.textContent = "删除当前项";
+            deleteAccountButton.className = "delete-btn";
+            
+            // 创建账号信息显示区域
+            const accountInfoDisplay = document.createElement("div");
+            accountInfoDisplay.className = "account-info-display";
+            
+            selectedNickname = document.createElement("span");
+            selectedNickname.innerHTML = "昵称：<b></b>";
+            
+            selectedId = document.createElement("span");
+            selectedId.innerHTML = "ID：<b></b>";
+            
+            selectedLoginTime = document.createElement("span");
+            selectedLoginTime.innerHTML = "登录时间：<b></b>";
+            
+            accountInfoDisplay.appendChild(selectedNickname);
+            accountInfoDisplay.appendChild(selectedId);
+            accountInfoDisplay.appendChild(selectedLoginTime);
+            
+            accountInfoContainer.appendChild(accountSelect);
+            accountInfoContainer.appendChild(deleteAccountButton);
+            accountInfoContainer.appendChild(accountInfoDisplay);
+            
+            // 插入到页面顶部
+            document.body.insertBefore(accountInfoContainer, document.body.firstChild);
+            
+            deleteAccountButton.addEventListener("click", () => {
+                const selectedAccountId = accountSelect.value;
+
+                if (selectedAccountId) {
+                    const accountInfos = getAccountInfosFromLocalStorage();
+                    const updatedAccountInfos = accountInfos.filter(info => info.id != selectedAccountId);
+                    storeAccountInfosToLocalStorage(updatedAccountInfos);
+
+                    updateAccountSelector();
+                    const firstAccount = updatedAccountInfos.length > 0 ? updatedAccountInfos[0] : null;
+                    updateSelectedAccount(firstAccount);
+                }
+            });
+
+            accountSelect.addEventListener("change", () => {
+                const selectedAccountId = accountSelect.value;
+                const accountInfos = getAccountInfosFromLocalStorage();
+                const selectedAccountInfo = accountInfos.find(info => info.id == selectedAccountId);
+                updateSelectedAccount(selectedAccountInfo);
+            });
+
+            updateAccountSelector();
+            const accountInfos = getAccountInfosFromLocalStorage();
+            const firstAccount = accountInfos.length > 0 ? accountInfos[0] : null;
+            updateSelectedAccount(firstAccount);
+            
+            // 检查是否需要显示帮助页面和提示
+            const lastSeenVersion = localStorage.getItem("pocket48Assistant_lastSeenVersion");
+            if (lastSeenVersion !== APP_VERSION) {
+                // 保存当前版本到本地存储
+                localStorage.setItem("pocket48Assistant_lastSeenVersion", APP_VERSION);
+                
+                // 跳转到帮助标签页
+                const helpTabBtn = document.querySelector('.tablinks[onclick*="helpTab"]');
+                if (helpTabBtn) {
+                    // 确保所有标签页隐藏
+                    const tabcontents = document.getElementsByClassName("tabcontent");
+                    for (let i = 0; i < tabcontents.length; i++) {
+                        tabcontents[i].style.display = "none";
+                    }
+                    
+                    // 移除所有活动标签的active类
+                    const tablinks = document.getElementsByClassName("tablinks");
+                    for (let i = 0; i < tablinks.length; i++) {
+                        tablinks[i].className = tablinks[i].className.replace(" active", "");
+                    }
+                    
+                    // 显示帮助标签页并激活对应按钮
+                    document.getElementById("helpTab").style.display = "block";
+                    helpTabBtn.className += " active";
+                    
+                    // 显示提示对话框
+                    setTimeout(() => {
+                        alert("请先阅读Q&A");
+                    }, 300);
+                }
+            } else {
+                // 否则保持默认行为，打开第一个标签页
+                document.querySelector('.tablinks')?.click();
+            }
+
+            // 自动显示"所有翻牌"视图
+            document.querySelector('.data-tab-btn.active')?.click();
+        });
+    </script>
+</head>
+<body>
+    <h1>口袋48翻牌助手</h1>
+    
+    <!-- 标签页导航 -->
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'function2Tab')">翻牌查询</button>
+        <button class="tablinks active" onclick="openTab(event, 'loginTab')">登录</button>
+        <button class="tablinks" onclick="openTab(event, 'helpTab')">帮助</button>
+    </div>
+
+    <!-- 翻牌查询标签页 -->
+    <div id="function2Tab" class="tabcontent">
+        <h2>翻牌查询</h2>
+        
+        <div class="action-buttons">
+            <button id="getIdolAnswerBtn" onclick="getIdolAnswer()">获取翻牌数据</button>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="downloadRawDataBtn" onclick="downloadJSON(idolAnswerRawData, 'IdolAnswer_Source_' + new Date().toISOString().replace(/[:.]/g, '_') + '.json')" disabled>下载原始数据</button>
+        </div>
+        
+        <div class="action-buttons">
+            <div class="file-upload-container">
+                <label for="rawDataFileInput">加载原始数据文件:</label>
+                <input type="file" id="rawDataFileInput" accept=".json">
+                <button onclick="loadRawData()">载入文件</button>
+            </div>
+        </div>
+        
+        <div class="log-container" id="logMessages"></div>
+        
+        <div class="results-container">
+            <div class="results-section">
+                <h3>所有翻牌</h3>
+                <div id="rawDataSummary">
+                    <!-- 筛选控件 --->
+                    <div class="filter-container">
+                        <div class="filter-item">
+                            <label for="rawIdolSelector">选择成员:</label>
+                            <select id="rawIdolSelector" onchange="autoApplyRawFilter()">
+                                <option value="all">全部成员</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="rawStartDate">开始日期:</label>
+                            <input type="date" id="rawStartDate" onchange="autoApplyRawFilter()">
+                        </div>
+                        <div class="filter-item">
+                            <label for="rawEndDate">结束日期:</label>
+                            <input type="date" id="rawEndDate" onchange="autoApplyRawFilter()">
+                        </div>
+                        <div class="filter-item">
+                            <label for="rawStatusSelector">翻牌状态:</label>
+                            <select id="rawStatusSelector" onchange="autoApplyRawFilter()">
+                                <option value="all">全部状态</option>
+                                <option value="1">未翻牌</option>
+                                <option value="2">已翻牌</option>
+                                <option value="3">已退款</option>
+                                <option value="4">翻牌中</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="rawTypeSelector">翻牌类型:</label>
+                            <select id="rawTypeSelector" onchange="autoApplyRawFilter()">
+                                <option value="all">全部类型</option>
+                                <option value="1">文字翻牌</option>
+                                <option value="2">语音翻牌</option>
+                                <option value="3">视频翻牌</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <label for="questionSearchInput">内容搜索:</label>
+                            <input type="text" id="questionSearchInput" placeholder="搜索提问或回答内容..." onkeyup="if(event.key === 'Enter') autoApplyRawFilter()">
+                            <button onclick="autoApplyRawFilter()">搜索</button>
+                        </div>
+                        <div class="filter-item">
+                            <label for="showAdditionalInfo">显示附加信息:</label>
+                            <input type="checkbox" id="showAdditionalInfo" checked onchange="autoApplyRawFilter()">
+                        </div>
+                        <button onclick="clearRawFilters()">清除筛选</button>
+                    </div>
+                    
+                    <!-- 筛选状态 --->
+                    <div id="rawFilterStatus" class="filter-status">
+                        <p>显示所有翻牌记录</p>
+                    </div>
+                    
+                    <!-- 新增数据视图切换标签 -->
+                    <div class="data-view-tabs">
+                        <button class="data-tab-btn active" onclick="switchDataView('all-answers')">所有翻牌</button>
+                        <button class="data-tab-btn" onclick="switchDataView('statistics')">统计结果</button>
+                    </div>
+                    
+                    <!-- 数据视图容器 -->
+                    <div id="all-answers-view" class="data-view">
+                        <!-- 分页控件 (上) -->
+                        <div class="pagination-controls">
+                            <button id="prev-page-top" onclick="changePage('raw', 'prev')" disabled>上一页</button>
+                            <span id="page-info-top">第 1 页 / 共 1 页</span>
+                            <button id="next-page-top" onclick="changePage('raw', 'next')" disabled>下一页</button>
+                            <select id="page-size-selector" onchange="changePageSize(this.value)">
+                                <option value="50" selected>每页50条</option>
+                                <option value="100">每页100条</option>
+                                <option value="200">每页200条</option>
+                                <option value="500">每页500条</option>
+                            </select>
+                        </div>
+                        
+                        <!-- 翻牌记录列表 -->
+                        <div id="raw-data-list" class="raw-data-list">
+                            <!-- 记录将在这里显示 -->
+                        </div>
+                        
+                        <!-- 分页控件 (下) -->
+                        <div class="pagination-controls">
+                            <button id="prev-page-bottom" onclick="changePage('raw', 'prev')" disabled>上一页</button>
+                            <span id="page-info-bottom">第 1 页 / 共 1 页</span>
+                            <button id="next-page-bottom" onclick="changePage('raw', 'next')" disabled>下一页</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 统计结果视图 -->
+                    <div id="statistics-view" class="data-view" style="display:none;">
+                        <h3>翻牌统计</h3>
+                        <div class="statistics-container">
+                            <p>请切换到此视图查看统计数据</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录标签页 -->
+    <div id="loginTab" class="tabcontent" style="display:block;">
+        <h2>Pocket48 登录</h2>
+        <form onsubmit="return false;">
+            <label for="phoneNumber">手机号:</label>
+            <input type="text" id="phoneNumber" name="phoneNumber" required>
+            <button type="button" onclick="sendVerificationCode()">发送验证码</button>
+            <br><br>
+            <label for="verificationCode">验证码:</label>
+            <input type="text" id="verificationCode" name="verificationCode" required>
+            <button type="button" onclick="login()">登录</button>
+        </form>
+    </div>
+
+    <!-- 帮助标签页 -->
+    <div id="helpTab" class="tabcontent" style="display:none;">
+        <h2>Q&A</h2>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q1: 隐私&数据安全</span>
+            </div>
+            <div class="dialog-content">
+                A1: 本网页仅提供登录和抓取翻牌记录的功能，不会收集用户数据。<br>
+                为了保护个人隐私，请不要随意分享下载的翻牌数据(.json格式文件)。
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q2: 登录/获取翻牌时，为什么显示："网络错误: Failed to fetch"？</span>
+            </div>
+            <div class="dialog-content">
+                A2: 浏览器获取口袋的数据时，会发送预检请求(OPTIONS)，非pocketapi.48.cn的域名会被拦截，导致请求失败。<br>
+                若遇到此问题，请尝试从本地打开网页文件或更换浏览器解决。
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q3: 如何登录？</span>
+            </div>
+            <div class="dialog-content">
+                A3: 在登录页面输入手机号，点击“发送验证码”，然后输入收到的验证码并点击“登录”按钮。<br>
+                注：每个手机号每日获取验证码数量有上限，请合理安排使用。
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q4: 为什么只能通过验证码登录？</span>
+            </div>
+            <div class="dialog-content">
+                A4: 口袋48现在(2025年7月30日)只允许通过验证码登录，无法使用账号密码登录。<br>
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q5: 提示非法授权怎么办？</span>
+            </div>
+            <div class="dialog-content">
+                A5: 请重新登录<br>
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q6: 如何获取翻牌数据？</span>
+            </div>
+            <div class="dialog-content">
+                A6: 登录后，切换到“翻牌查询”页面，点击“获取翻牌数据”按钮即可获取数据。
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q7: 为什么在这里登录后，APP需要重新登录？</span>
+            </div>
+            <div class="dialog-content">
+                A7: 口袋会在登录的appinfo改变后，使上一个登录失效。
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+            <span class="dialog-idol">Q8: 如何在本地使用翻牌数据？</span>
+            </div>
+            <div class="dialog-content">
+            A8: 下载：在"翻牌查询"页面，获取数据后，点击"下载原始数据"按钮即可下载JSON格式的翻牌数据。<br>
+            载入：在"翻牌查询"页面，点击"载入原始数据"按钮即可将下载的JSON格式的翻牌数据加载到页面中。
+            </div>
+        </div>
+        <div class="dialog-container">
+            <div class="dialog-header">
+                <span class="dialog-idol">Q9: 如何筛选翻牌记录？</span>
+            </div>
+            <div class="dialog-content">
+                A9: 使用筛选控件选择成员、日期、状态或类型，输入关键词后按回车或点击“搜索”按钮。
+            </div>
+        </div>
+    </div>
+</body>
+<footer style="background-color: #f1f1f1; padding: 10px; text-align: center; border-top: 1px solid #ddd;">
+    <p>口袋48翻牌助手 | by 0xwhy | 版本: <span id="version-display"></span> | 更新时间: <span id="update-date-display"></span> | 联系我: 
+        <a href="https://weibo.com/u/6887482760" target="_blank" style="color: #007bff; text-decoration: none;">微博</a>
+        <span style="margin: 0 1px; color: #999;">•</span>
+        <a href="https://0xwhy.com" target="_blank" style="color: #007bff; text-decoration: none;">个人网站</a>
+    </p>
+</footer>
+</html>
