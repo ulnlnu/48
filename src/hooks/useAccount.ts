@@ -28,12 +28,30 @@ export function useAccount() {
   }, []);
 
   const addAccount = useCallback((account: AccountInfo) => {
-    const exists = accounts.some(a => a.accountId === account.accountId);
-    if (!exists) {
+    const index = accounts.findIndex(a => a.accountId === account.accountId);
+    
+    if (index !== -1) {
+      // 账号已存在，更新信息（主要是更新 Token）
+      const newAccounts = [...accounts];
+      newAccounts[index] = account;
+      saveAccounts(newAccounts);
+      
+      // 如果当前正是这个账号，立即更新状态
+      if (currentAccount?.accountId === account.accountId) {
+        setCurrentAccount(account);
+      }
+    } else {
+      // 新账号
       const newAccounts = [...accounts, account];
       saveAccounts(newAccounts);
+      
+      // 如果是第一个添加的账号，自动切换为当前账号
+      if (accounts.length === 0) {
+        setCurrentAccount(account);
+        localStorage.setItem('pocket48_last_account', account.accountId);
+      }
     }
-  }, [accounts, saveAccounts]);
+  }, [accounts, currentAccount, saveAccounts]);
 
   const removeAccount = useCallback((accountId: string) => {
     const newAccounts = accounts.filter(a => a.accountId !== accountId);
@@ -58,6 +76,11 @@ export function useAccount() {
     }
   }, [accounts, currentAccount, saveAccounts]);
 
+  const logout = useCallback(() => {
+    setCurrentAccount(null);
+    localStorage.removeItem('pocket48_last_account');
+  }, []);
+
   return {
     accounts,
     currentAccount,
@@ -66,5 +89,6 @@ export function useAccount() {
     switchAccount,
     updateAccount,
     setCurrentAccount,
+    logout,
   };
 }

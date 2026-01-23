@@ -1,0 +1,56 @@
+{ 
+  "roomInfo": { 
+    "roomId": "67362289", 
+    "chatRoomId": "67362289", 
+    "roomName": "包间", 
+    "roomAvatar": "/2022/0102/63559x7and4fe4v9tc1qit7q5171g.jpg", 
+    "roomTopic": "包富", 
+    "ctime": "1481461757000", 
+    "roomType": 0, 
+    "chatType": 1, 
+    "ownerId": "63559", 
+    "ownerName": "SNH48-胡晓慧", 
+    "icon": [ 
+      "/mediasource/teamLogo2/all/snh48_n2.png" 
+    ], 
+    "bubbleId": "338785331586015554", 
+    "bgImg": "/2022/0110/63559x9ikrlf4bsg4094flvo5jab0.jpg", 
+    "welcomeMessage": "", 
+    "welcomeManagerName": "", 
+    "welcomeManagerId": "", 
+    "welcomeManagerAvatar": "", 
+    "replyKey": [], 
+    "qingNi": false, 
+    "redPackageIcon": "0", 
+    "managerAuditExplain": " https://h5.48.cn/2019apppage/youth2/aboutamin.html ", 
+    "crm": "FqhzXcniuV6sLUVJf/Jf2w==", 
+    "chatStatus": 1, 
+    "ownerPf": "/backstage/2022/0602/zkzqaz39y2lml23k3ja0fu1.png" 
+  }, 
+  "userFunction": { 
+    "sendText": true, 
+    "sendImage": false, 
+    "sendVideo": false, 
+    "sendVoice": false, 
+    "sendGif": false, 
+    "sendEmoticon": true, 
+    "sendForward": false, 
+    "sendGift": true, 
+    "openAudio": false, 
+    "cdTime": 30, 
+    "normalRedPackage": false, 
+    "passwordRedPackage": false, 
+    "specicalRedPackage": false, 
+    "welcomeMessage": false, 
+    "replyMessage": false, 
+    "roomTitle": false, 
+    "roomTopic": false 
+  }, 
+  "roomRole": "0", 
+  "userConfig": { 
+    "bgImg": "/2022/0110/63559x9ikrlf4bsg4094flvo5jab0.jpg", 
+    "bubbleId": "283923487508824000" 
+  }, 
+  "managerName": "", 
+  "openAnonymousStatus": 0 
+}

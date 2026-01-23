@@ -1,5 +1,5 @@
 // 口袋48 API 服务
-import type { AccountInfo, IdolAnswer, YearReportData, IdolAnswerRaw, UserInfo, Room, Live } from '../types';
+import type { AccountInfo, IdolAnswer, YearReportData, IdolAnswerRaw, UserInfo, Room, RoomMessageResponse, OpenLiveMessage } from '../types';
 
 // 使用代理时的基础路径
 const API_BASE = '/pocketapi';
@@ -68,12 +68,22 @@ export async function login(account: string, code: string): Promise<AccountInfo 
     const result = await response.json();
 
     if (result.status === 200 && result.success === true && result.content) {
+      console.log('登录成功，返回数据:', result.content);
+      const userInfo = result.content.userInfo || {};
+      // 处理头像URL：如果有相对路径则补全
+      let avatarUrl = userInfo.avatar || userInfo.infoAvatar || '';
+      if (avatarUrl && !avatarUrl.startsWith('http')) {
+        avatarUrl = `https://source.48.cn${avatarUrl}`;
+      }
       return {
-        accountId: result.content.id,
-        userId: result.content.userId,
+        accountId: String(result.content.id || userInfo.userId), // 优先用外层id，没有则用userInfo.userId
+        userId: String(userInfo.userId), // 修正：userId 在 userInfo 对象里！
         token: result.content.token,
         username: account,
-        avatar: result.content.userInfo?.avatar,
+        avatar: avatarUrl,
+        nickname: userInfo.nickName || userInfo.nickname,
+        level: userInfo.level,
+        vip: userInfo.vip,
       };
     }
     return null;
@@ -84,7 +94,7 @@ export async function login(account: string, code: string): Promise<AccountInfo 
 }
 
 // 获取翻牌列表 (基础 fetch)
-async function fetchIdolAnswerList(
+export async function fetchIdolAnswerList(
   token: string,
   beginLimit: number,
   limit: number,
@@ -289,78 +299,117 @@ function mapToIdolAnswer(item: IdolAnswerRaw): IdolAnswer {
   };
 }
 
+// 从已有数据生成年报
+export function generateYearReportFromData(answers: IdolAnswer[], year: number): YearReportData {
+  // 筛选当年的数据
+  const yearAnswers = answers.filter(a => {
+    const d = new Date(a.qtime * 1000);
+    return d.getFullYear() === year;
+  });
+
+  // 聚合翻牌统计
+  // 偶像提问统计
+  const idolStats = new Map<string, { name: string; count: number }>();
+  const answeredIdolStats = new Map<string, { name: string; count: number }>();
+  const monthlyStats = new Array(12).fill(0);
+  const hourlyStats = new Array(24).fill(0);
+
+  yearAnswers.forEach(a => {
+    // 偶像提问数
+    const idolKey = a.idolId || a.idolName;
+    const current = idolStats.get(idolKey) || { name: a.idolName, count: 0 };
+    current.count++;
+    idolStats.set(idolKey, current);
+
+    // 被回复统计
+    if (a.status === 2) {
+      const answeredCurrent = answeredIdolStats.get(idolKey) || { name: a.idolName, count: 0 };
+      answeredCurrent.count++;
+      answeredIdolStats.set(idolKey, answeredCurrent);
+    }
+
+    // 时间分布
+    const d = new Date(a.qtime * 1000);
+    monthlyStats[d.getMonth()]++;
+    hourlyStats[d.getHours()]++;
+  });
+
+  // 排序 Top 列表
+  const topIdols = Array.from(idolStats.entries())
+    .map(([id, val]) => ({ idolId: id, name: val.name, count: val.count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const topAnsweredIdols = Array.from(answeredIdolStats.entries())
+    .map(([id, val]) => ({ idolId: id, name: val.name, count: val.count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const answerStats = {
+    askCount: yearAnswers.length,
+    askedIdols: idolStats.size,
+    answeredCount: yearAnswers.filter(a => a.status === 2).length,
+    answeredIdols: answeredIdolStats.size,
+    cost: yearAnswers.reduce((sum, a) => sum + a.price, 0),
+    topIdols,
+    topAnsweredIdols,
+    monthlyStats,
+    hourlyStats
+  };
+
+  // 构建基础年报结构
+  return {
+    userId: '',
+    year: year,
+    overview: {
+      totalDays: new Set(yearAnswers.map(a => new Date(a.qtime * 1000).toDateString())).size,
+      totalMessages: yearAnswers.length,
+      totalChars: yearAnswers.reduce((sum, a) => sum + (a.content ? a.content.length : 0), 0),
+      idolsReplied: answerStats.answeredIdols,
+      idolsMessaged: answerStats.askedIdols
+    },
+    live: {
+      watchCount: 0,
+      watchDays: 0,
+      danmakuCount: 0,
+      danmakuDays: 0,
+      danmakuKeywords: [],
+      giftCount: 0,
+      giftDays: 0,
+      giftAmount: 0,
+      scoreCount: 0,
+      topLiveIdols: [],
+      topGiftLive: [],
+      danmakuMonthly: [],
+      danmakuHourly: []
+    },
+    room: {
+      messageCount: 0,
+      messageDays: 0,
+      replyCount: 0,
+      replyDays: 0,
+      topIdols: [],
+      messageMonthly: [],
+      messageHourly: []
+    },
+    answer: answerStats,
+    gift: {
+      totalCount: 0,
+      totalAmount: 0,
+      giftTypes: [],
+      giftIdols: []
+    }
+  };
+}
+
 // 获取用户年报数据 (聚合生成)
 export async function getYearReport(token: string, year: number): Promise<YearReportData | null> {
   try {
     // 1. 获取翻牌数据
     const answers = await getAllIdolAnswers(token);
     
-    // 筛选当年的数据
-    const yearAnswers = answers.filter(a => {
-      const d = new Date(a.qtime * 1000);
-      return d.getFullYear() === year;
-    });
-
-    // 2. 聚合翻牌统计
-    const answerStats = {
-      askCount: yearAnswers.length,
-      askedIdols: new Set(yearAnswers.map(a => a.idolId)).size,
-      answeredCount: yearAnswers.filter(a => a.status === 2).length, // 2: 已翻牌
-      answeredIdols: new Set(yearAnswers.filter(a => a.status === 2).map(a => a.idolId)).size,
-      cost: yearAnswers.reduce((sum, a) => sum + a.price, 0),
-      topIdols: [], // TODO: 计算
-      topAnsweredIdols: [] // TODO: 计算
-    };
-
-    // 3. 构建基础年报结构 (Live/Room 部分暂时为空，因为获取全量数据太重)
-    const report: YearReportData = {
-      userId: '',
-      year: year,
-      overview: {
-        totalDays: 0,
-        totalMessages: 0,
-        totalChars: 0,
-        idolsReplied: answerStats.answeredIdols,
-        idolsMessaged: 0
-      },
-      live: {
-        watchCount: 0,
-        watchDays: 0,
-        danmakuCount: 0,
-        danmakuDays: 0,
-        danmakuKeywords: [],
-        giftCount: 0,
-        giftDays: 0,
-        giftAmount: 0,
-        scoreCount: 0,
-        topLiveIdols: [],
-        topGiftLive: [],
-        danmakuMonthly: [],
-        danmakuHourly: []
-      },
-      room: {
-        messageCount: 0,
-        messageDays: 0,
-        replyCount: 0,
-        replyDays: 0,
-        topIdols: [],
-        messageMonthly: [],
-        messageHourly: []
-      },
-      answer: {
-        ...answerStats,
-        topIdols: [],
-        topAnsweredIdols: []
-      },
-      gift: {
-        totalCount: 0,
-        totalAmount: 0,
-        giftTypes: [],
-        giftIdols: []
-      }
-    };
-
-    return report;
+    // 2. 使用公共方法生成
+    return generateYearReportFromData(answers, year);
   } catch (error) {
     console.error('生成年报失败:', error);
     return null;
@@ -368,25 +417,64 @@ export async function getYearReport(token: string, year: number): Promise<YearRe
 }
 
 // 获取用户信息
-export async function getUserInfo(token: string): Promise<UserInfo | null> {
+export async function getUserInfo(token: string, userId: string): Promise<UserInfo | null> {
   try {
-    const response = await fetch(`${API_BASE}/user/api/v1/user/info/home`, { // 修正路径
+    if (!userId || userId === 'undefined') {
+      console.warn('[API] getUserInfo aborted: Invalid userId', userId);
+      return null;
+    }
+
+    console.log(`[API] getUserInfo called for userId: ${userId}`);
+    const response = await fetch(`${API_BASE}/user/api/v1/user/info/home`, {
       method: 'POST',
       headers: {
         ...DEFAULT_HEADERS,
         'AppInfo': JSON.stringify(APP_INFO),
         'token': token,
       },
-      body: JSON.stringify({ userId: '' }) // 通常需要userId，但如果不传可能返回自己的？或者从Token解析
+      // 尝试传数字类型的 userId
+      body: JSON.stringify({ userId: Number(userId) })
     });
-    // 如果 /user/info/home 需要 userId，我们可能需要先解析 token 或 stored info
-    // 暂且保留原调用方式，但注意路径修正
 
     const result = await response.json();
-    return result.status === 200 && result.success === true ? (result.content as UserInfo) : null;
+    console.log('[API] getUserInfo result:', result);
+    
+    if (result.status !== 200 || result.success !== true) {
+      console.warn('[API] getUserInfo failed with result:', result);
+      return null;
+    }
+
+    return result.content as UserInfo;
   } catch (error) {
     console.error('获取用户信息失败:', error);
     return null;
+  }
+}
+
+// 根据ID获取简略用户信息 (user/api/v1/user/info/home/small)
+export async function getUserInfoById(token: string, userId: string): Promise<unknown> {
+  try {
+    const response = await fetch(`${API_BASE}/user/api/v1/user/info/home/small`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({
+        needMuteInfo: 0,
+        userId: Number(userId)
+      })
+    });
+
+    const result = await response.json();
+    if (result.status === 200 && result.success === true) {
+      return result.content;
+    }
+    return result;
+  } catch (error) {
+    console.error(`获取用户(${userId})信息失败:`, error);
+    return { error: String(error) };
   }
 }
 
@@ -405,17 +493,87 @@ export async function getRoomList(token: string): Promise<Room[]> {
     });
 
     const result = await response.json();
-    return result.status === 200 && result.success === true ? (result.content as Room[]) || [] : [];
+    console.log('getRoomList 返回:', result);
+    if (result.status === 200 && result.success === true) {
+      // content.roomId 是房间数组
+      const content = result.content as { roomId?: Room[] };
+      return (content.roomId as Room[]) || [];
+    } else {
+      console.warn('获取房间列表失败:', result.message || result);
+      return [];
+    }
   } catch (error) {
     console.error('获取房间列表失败:', error);
     return [];
   }
 }
 
-// 获取直播列表
-export async function getLiveList(token: string, page: number = 1, size: number = 20): Promise<Live[]> {
+// 获取房间信息
+export async function getRoomInfo(token: string, roomId: string): Promise<Room | null> {
   try {
-    // 使用文档中的路径
+    const response = await fetch(`${API_BASE}/im/api/v1/im/room/info`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({ roomId, targetType: 0 })
+    });
+
+    const result = await response.json();
+    if (result.status === 200 && result.success === true && result.content) {
+      return result.content as Room;
+    }
+    return null;
+  } catch (error) {
+    console.error(`获取房间(${roomId})信息失败:`, error);
+    return null;
+  }
+}
+
+// ==================== 成员房间直播 API ====================
+
+/**
+ * 获取成员直播/录播列表
+ * POST /live/api/v1/live/getLiveList
+ * @param token 用户token
+ * @param options 选项
+ * @param options.next 分页偏移量 (首次传0)
+ * @param options.record false=获取正在直播, true=获取录播
+ * @param options.groupId 团队ID (0=全部团队, 10=SNH48, 11=BEJ48, 12=GNZ48, 14=CKG48, 21=CGT48)
+ * @param options.userId 指定成员ID (获取特定成员的录播)
+ */
+export async function getLiveList(
+  token: string,
+  options: {
+    next?: number | string;
+    record?: boolean;
+    groupId?: number;
+    userId?: number;
+  } = {}
+): Promise<{
+  status: number;
+  success?: boolean;
+  content?: {
+    liveList: Array<{
+      liveId: string;
+      title: string;
+      coverPath: string;
+      ctime: string;
+      roomId: string;
+      liveType: number;
+      userInfo?: {
+        userId: string;
+        nickName: string;
+        avatar: string;
+      };
+      [key: string]: unknown;
+    }>;
+    next: string;
+  };
+}> {
+  try {
     const response = await fetch(`${API_BASE}/live/api/v1/live/getLiveList`, {
       method: 'POST',
       headers: {
@@ -424,17 +582,498 @@ export async function getLiveList(token: string, page: number = 1, size: number 
         'token': token,
       },
       body: JSON.stringify({
-        groupId: 0,
         debug: true,
-        next: (page - 1) * size, // next 通常是 offset
-        record: false
+        next: options.next ?? 0,
+        record: options.record ?? false,
+        ...(options.groupId !== undefined && { groupId: options.groupId }),
+        ...(options.userId !== undefined && { userId: options.userId }),
       })
     });
 
     const result = await response.json();
-    return result.status === 200 && result.success === true ? (result.content?.liveList as Live[]) || [] : [];
+    return result;
   } catch (error) {
-    console.error('获取直播列表失败:', error);
+    console.error('获取成员直播列表失败:', error);
+    return { status: 500, content: { liveList: [], next: '0' } };
+  }
+}
+
+// 获取房间消息列表 (用于统计)
+export async function fetchRoomMessages(
+  token: string, 
+  roomId: string, 
+  nextTime: string = '0'
+): Promise<{ status: number; content: RoomMessageResponse | null; }> {
+  try {
+    const response = await fetch(`${API_BASE}/im/api/v1/chatroom/msg/list/all`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({
+        needTop1Msg: true,
+        roomId: roomId,
+        nextTime: nextTime
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error(`获取房间(${roomId})消息失败:`, error);
+    return { status: 500, content: null };
+  }
+}
+
+// 获取房间主人发言
+export async function fetchRoomOwnerMessages(
+  token: string,
+  roomId: string,
+  ownerId: string,
+  nextTime: string = '0'
+): Promise<{ status: number; content: RoomMessageResponse | null; }> {
+  try {
+    const response = await fetch(`${API_BASE}/im/api/v1/chatroom/msg/list/homeowner`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({
+        needTop1Msg: false,
+        roomId: roomId,
+        ownerId: ownerId,
+        nextTime: nextTime
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error(`获取房间(${roomId})主人(${ownerId})消息失败:`, error);
+    return { status: 500, content: null };
+  }
+}
+
+// 获取Team房间信息 (参数 id 即 conversation/page 返回的 ownerId)
+export async function getTeamRoomInfo(token: string, id: string): Promise<{ serverId: string; channelInfo: Record<string, unknown> } | null> {
+  try {
+    const response = await fetch(`${API_BASE}/im/api/v1/im/team/room/info`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({ channelId: id })  // API 字段名是 channelId，但值是 id (ownerId)
+    });
+
+    const result = await response.json();
+    console.log('getTeamRoomInfo 返回:', result);
+
+    // serverId 在 content.channelInfo.serverId
+    if (result.content && result.content.channelInfo && result.content.channelInfo.serverId !== undefined) {
+      return {
+        serverId: String(result.content.channelInfo.serverId),
+        channelInfo: result.content.channelInfo
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error(`获取Team房间(${id})信息失败:`, error);
+    return null;
+  }
+}
+
+// 获取Team消息列表 (fetch-room-messages with fetchAll=true)
+export async function fetchTeamMessages(
+  token: string,
+  channelId: string,
+  serverId: string,
+  nextTime: string | number = 0
+): Promise<{ status: number; content: RoomMessageResponse | null; }> {
+  try {
+    const response = await fetch(`${API_BASE}/im/api/v1/team/message/list/all`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({
+        channelId: parseInt(channelId),
+        serverId: parseInt(serverId),
+        nextTime: nextTime,
+        limit: 50
+      })
+    });
+    const result = await response.json();
+    console.log('fetchTeamMessages 返回:', result);
+    // 打印前3条消息的 extInfo 作为示例
+    if (result.content?.message) {
+      result.content.message.slice(0, 3).forEach((msg: Record<string, unknown>, idx: number) => {
+        console.log(`消息${idx + 1} extInfo:`, msg.extInfo);
+      });
+    }
+    return result;
+  } catch (error) {
+    console.error(`获取Team房间(${channelId})消息失败:`, error);
+    return { status: 500, content: null };
+  }
+}
+
+// 获取Team屋主消息列表 (fetch-room-messages with fetchAll=false)
+export async function fetchTeamOwnerMessages(
+  token: string,
+  channelId: string,
+  serverId: string,
+  nextTime: string | number = 0
+): Promise<{ status: number; content: RoomMessageResponse | null; }> {
+  try {
+    const response = await fetch(`${API_BASE}/im/api/v1/team/message/list/homeowner`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({
+        channelId: parseInt(channelId),
+        serverId: parseInt(serverId),
+        nextTime: nextTime,
+        limit: 50
+      })
+    });
+    return await response.json();
+  } catch (error) {
+    console.error(`获取Team房间(${channelId})屋主消息失败:`, error);
+    return { status: 500, content: null };
+  }
+}
+
+/**
+ * 获取礼物列表
+ * @param token 用户Token
+ * @param memberId 成员ID (默认 63559)
+ */
+export async function getGiftList(token: string, memberId: string | number): Promise<unknown> {
+  try {
+    console.log('[getGiftList] 请求参数:', { token: token ? '***' : 'missing', memberId });
+    const response = await fetch(`${API_BASE}/gift/api/v1/gift/list`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token
+      },
+      body: JSON.stringify({
+        businessCode: 0,
+        memberId: typeof memberId === 'number' ? memberId : parseInt(memberId, 10)
+      })
+    });
+
+    const result = await response.json();
+    console.log('[getGiftList] 响应结果:', result);
+    return result;
+  } catch (error) {
+    console.error('获取礼物列表失败:', error);
+    return { status: 500, success: false, message: String(error) };
+  }
+}
+
+// ==================== yaya_msg API (新版 API) ====================
+
+/**
+ * 验证 Token 有效性
+ * POST https://pocketapi.48.cn/user/api/v1/user/info/reload
+ */
+export async function verifyToken(token: string): Promise<unknown> {
+  try {
+    const response = await fetch(`${API_BASE}/user/api/v1/user/info/reload`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({ from: 'appstart' }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('验证Token失败:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
+/**
+ * 获取成员档案
+ * POST https://pocketapi.48.cn/user/api/v1/user/star/archives
+ */
+export async function getStarArchives(token: string, memberId: number): Promise<unknown> {
+  try {
+    const response = await fetch(`${API_BASE}/user/api/v1/user/star/archives`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({ memberId }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('获取成员档案失败:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
+/**
+ * 获取成员历史动态
+ * POST https://pocketapi.48.cn/user/api/v1/user/star/history
+ */
+export async function getStarHistory(token: string, memberId: number, limit: number = 100, lastTime: number = 0): Promise<unknown> {
+  try {
+    const response = await fetch(`${API_BASE}/user/api/v1/user/star/history`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({ memberId, limit, lastTime }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('获取成员历史失败:', error);
+    return { success: false, message: String(error) };
+  }
+}
+
+/**
+ * 获取直播推送消息
+ * POST https://pocketapi.48.cn/im/api/v1/chatroom/msg/list/aim/type
+ */
+export async function getOpenLiveMessages(token: string, memberId: string, nextTime: number = 0): Promise<{ status: number; content: { message?: OpenLiveMessage[]; nextTime?: number } | null; }> {
+  try {
+    const response = await fetch(`${API_BASE}/im/api/v1/chatroom/msg/list/aim/type`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({
+        extMsgType: 'OPEN_LIVE',
+        roomId: '',
+        ownerId: String(memberId),
+        nextTime,
+      }),
+    });
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('获取直播推送失败:', error);
+    return { status: 500, content: null };
+  }
+}
+
+/**
+ * 公演流清晰度类型
+ */
+export type PlayStreamName = '标清' | '高清' | '超清';
+
+/**
+ * 公演流信息
+ */
+export interface PlayStream {
+  streamName: PlayStreamName;
+  streamPath?: string;
+  streamType: 1 | 2 | 3;
+  vipShow: boolean;
+  logonPicture?: string;
+}
+
+/**
+ * 获取单条公演直播/录播信息（含多清晰度流）
+ * POST https://pocketapi.48.cn/live/api/v1/live/getOpenLiveOne
+ * @param token 用户token
+ * @param liveId 公演ID
+ */
+export async function getOpenLiveOne(token: string, liveId: string): Promise<{
+  status: number;
+  success?: boolean;
+  content?: {
+    liveId: string;
+    title: string;
+    coverPath?: string;
+    roomId?: string;
+    status: number;
+    playNum?: string;
+    stime: string;
+    playStreams: PlayStream[];
+    subTitle?: string;
+    endTime?: string;
+    [key: string]: unknown;
+  } | null;
+}> {
+  try {
+    const response = await fetch(`${API_BASE}/live/api/v1/live/getOpenLiveOne`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+        'token': token,
+      },
+      body: JSON.stringify({ liveId: String(liveId) }),
+    });
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('获取公演详情失败:', error);
+    return { status: 500, content: null };
+  }
+}
+
+// 成员列表项类型
+export interface MemberListItem {
+  id: number;
+  ownerName: string;
+  serverId: string;
+  channelId: string;
+  roomId: string;  // conversation/page 的 targetId
+  team?: string;
+}
+
+// 获取成员列表（用于搜索成员）
+export async function getMemberList(): Promise<MemberListItem[]> {
+  try {
+    const response = await fetch('https://fastly.jsdelivr.net/gh/yk1z/yaya_msg@master/members.json');
+    const rawData = await response.json();
+
+    // yaya_msg 的 members.json 结构是 { roomId: [...] }
+    const data = rawData.roomId || [];
+
+    if (Array.isArray(data)) {
+      console.log('getMemberList 返回成员数:', data.length);
+      return data;
+    }
+    return [];
+  } catch (error) {
+    console.error('获取成员列表失败:', error);
     return [];
   }
 }
+
+// ==================== 公演录播下载 API ====================
+
+/**
+ * 公演录播信息
+ */
+export interface OpenLiveInfo {
+  liveId: string;
+  title: string;
+  subTitle: string;
+  coverPath: string;
+  stime: string;        // 开始时间戳
+  status?: number;      // 1=未开始 2=直播中
+  liveType?: number;
+}
+
+/**
+ * 获取公演录播列表
+ * POST https://pocketapi.48.cn/live/api/v1/live/getLiveList
+ * @param groupId 团队ID (10=SNH48, 11=BEJ48, 12=GNZ48, 14=CKG48, 21=CGT48)
+ * @param record true=录播 false=直播
+ * @param next 分页偏移量
+ */
+export async function getOpenLiveList(groupId: number, record: boolean = true, next: number = 0): Promise<{
+  status: number;
+  success?: boolean;
+  content?: {
+    liveList: OpenLiveInfo[];
+    next?: number;
+  };
+}> {
+  try {
+    const response = await fetch(`${API_BASE}/live/api/v1/live/getLiveList`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+      },
+      body: JSON.stringify({
+        groupId,
+        record,
+        next,
+        debug: true
+      }),
+    });
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('获取公演录播列表失败:', error);
+    return { status: 500, content: { liveList: [] } };
+  }
+}
+
+// ==================== 成员房间直播 API ====================
+
+/**
+ * 成员房间直播信息
+ */
+export interface RoomLiveInfo {
+  content?: {
+    liveId: string;
+    roomId: string;
+    playStreamPath: string;    // 单个流地址
+    msgFilePath: string;
+    title: string;
+    ctime: string;
+    [key: string]: unknown;
+  };
+}
+
+/**
+ * 获取成员房间直播详情（用于成员口袋房间直播/录播）
+ * POST https://pocketapi.48.cn/live/api/v1/live/getLiveOne
+ * @param liveId 直播ID
+ */
+export async function getLiveOne(liveId: string): Promise<RoomLiveInfo> {
+  try {
+    const response = await fetch(`${API_BASE}/live/api/v1/live/getLiveOne`, {
+      method: 'POST',
+      headers: {
+        ...DEFAULT_HEADERS,
+        'AppInfo': JSON.stringify(APP_INFO),
+      },
+      body: JSON.stringify({ liveId }),
+    });
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('获取成员房间直播详情失败:', error);
+    return { content: undefined };
+  }
+}
+
+/**
+ * 下载文件内容（用于下载 m3u8 文件）
+ * @param url 文件URL
+ */
+export async function downloadM3u8File(url: string): Promise<string> {
+  try {
+    const response = await fetch(url);
+    return await response.text();
+  } catch (error) {
+    console.error('下载 m3u8 文件失败:', error);
+    throw error;
+  }
+}
+
+// 团队ID映射
+export const TEAM_IDS: Record<string, number> = {
+  'snh48': 10,
+  'bej48': 11,
+  'gnz48': 12,
+  'ckg48': 14,
+  'cgt48': 21,
+};

@@ -1,0 +1,182 @@
+/* 主题切换器样式 */
+
+.theme-switcher {
+  position: relative;
+  z-index: 1000;
+}
+
+.theme-switcher--header {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.theme-switcher--floating {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+/* 触发按钮 */
+.theme-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 25px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.theme-trigger:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.theme-icon {
+  font-size: 1.1rem;
+}
+
+.theme-name {
+  font-weight: 500;
+}
+
+.chevron {
+  transition: transform 0.3s ease;
+  opacity: 0.8;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单 */
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: dropdownIn 0.25s ease-out;
+  border: 1px solid var(--border-color);
+}
+
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.theme-dropdown-header {
+  padding: 12px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.theme-options {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 主题选项 */
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.theme-option:hover {
+  background: var(--bg-color);
+}
+
+.theme-option.active {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.option-icon {
+  font-size: 1.2rem;
+}
+
+.option-name {
+  flex: 1;
+}
+
+.check-icon {
+  opacity: 0.8;
+}
+
+.theme-option:not(.active) .check-icon {
+  display: none;
+}
+
+/* 浮動模式特殊樣式 */
+.theme-switcher--floating .theme-trigger {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.theme-switcher--floating .theme-dropdown {
+  bottom: calc(100% + 8px);
+  top: auto;
+  right: 0;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .theme-switcher--header {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-top: 15px;
+    width: 100%;
+  }
+
+  .theme-trigger {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .theme-dropdown {
+    width: 100%;
+    min-width: auto;
+    right: auto;
+    left: 0;
+  }
+}
